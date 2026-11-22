@@ -1,0 +1,1102 @@
+/* ==========================================================================
+   Lab 11: "Passport Control"
+   Border Inspection & Biometric Credential Verification System
+   Republic of Verity Immigration Agency
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Root Variables & Color Scheme (WCAG AA Compliant >= 4.5:1)
+   -------------------------------------------------------------------------- */
+:root {
+  /* Cover / Environment */
+  --color-oxblood: #5A1A24;
+  --color-oxblood-dark: #3F1018;
+  --color-gold-crest: #E5C378;
+  --color-gold-muted: #C5A059;
+
+  /* Passport Security Paper */
+  --color-paper-bg: #F6F0E1;
+  --color-paper-tint: #ECE3CF;
+  --color-paper-border: #8C7D6B;
+  --color-paper-line: #C4B59D;
+
+  /* Security Inks (tested on --color-paper-bg) */
+  --color-ink-primary: #1F2A44;    /* Contrast > 12:1 */
+  --color-ink-secondary: #2D3748;  /* Contrast > 8.5:1 */
+  --color-ink-muted: #4A5568;      /* Contrast > 5.4:1 */
+
+  /* Rubber Stamp Inks (tested on --color-paper-bg) */
+  --color-stamp-denied: #B3261E;   /* Contrast 5.69:1 */
+  --color-stamp-denied-bg: #FDE8E7;/* Soft alert background */
+  --color-stamp-granted: #1E6B3A;  /* Contrast 5.68:1 */
+  --color-stamp-granted-bg: #E8F5EC;
+
+  /* Typography */
+  --font-serif: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --font-body: "Source Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "Courier Prime", "Courier New", Courier, monospace;
+}
+
+/* --------------------------------------------------------------------------
+   Reset & Base Styles
+   -------------------------------------------------------------------------- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: var(--color-oxblood);
+  background-image:
+    radial-gradient(circle at 50% 8%, rgba(130, 40, 55, 0.5) 0%, transparent 60%),
+    linear-gradient(rgba(0, 0, 0, 0.15) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.15) 1px, transparent 1px);
+  background-size: 100% 100%, 30px 30px, 30px 30px;
+  color: var(--color-paper-bg);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.5;
+  min-height: 100vh;
+  padding: 1.5rem 1rem 3rem;
+  overflow-x: hidden;
+  overflow-wrap: anywhere;
+}
+
+/* Accessible Focus Outlines */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible {
+  outline: 3px solid var(--color-ink-primary);
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   Desk & Passport Booklet Container
+   -------------------------------------------------------------------------- */
+.desk-container {
+  max-width: 840px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* --------------------------------------------------------------------------
+   Embossed Passport Cover Header
+   -------------------------------------------------------------------------- */
+.passport-cover-header {
+  text-align: center;
+  padding: 1rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  border-bottom: 1px solid rgba(229, 195, 120, 0.25);
+}
+
+.crest-wrap {
+  display: flex;
+  justify-content: center;
+}
+
+.passport-crest {
+  width: 72px;
+  height: 72px;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.6));
+}
+
+.cover-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.authority-sub {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  color: var(--color-gold-muted);
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.authority-title {
+  font-family: var(--font-serif);
+  font-size: clamp(1.8rem, 4.5vw, 2.5rem);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--color-gold-crest);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+  line-height: 1.15;
+}
+
+.authority-doc {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  color: var(--color-paper-bg);
+  opacity: 0.9;
+}
+
+.checkpoint-badge {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  margin-top: 0.25rem;
+}
+
+.badge-port {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--color-gold-muted);
+  color: var(--color-gold-crest);
+  padding: 0.2rem 0.6rem;
+  border-radius: 3px;
+}
+
+.badge-status {
+  padding: 0.2rem 0.6rem;
+  border-radius: 3px;
+  font-weight: 700;
+  border: 1px solid currentColor;
+}
+
+.status-idle {
+  background: rgba(45, 55, 72, 0.7);
+  color: #E2E8F0;
+}
+
+.status-failure {
+  background: rgba(179, 38, 30, 0.8);
+  color: #FFFFFF;
+  border-color: #FF8A80;
+}
+
+.status-success {
+  background: rgba(30, 107, 58, 0.85);
+  color: #FFFFFF;
+  border-color: #81C784;
+}
+
+/* --------------------------------------------------------------------------
+   Passport Data Page (The Warm Security Paper Document)
+   -------------------------------------------------------------------------- */
+.passport-desk {
+  width: 100%;
+}
+
+.passport-page {
+  background-color: var(--color-paper-bg);
+  /* Intricate security guilloche texture created via repeating-radial-gradient */
+  background-image:
+    repeating-radial-gradient(circle at 10% 20%, rgba(160, 130, 90, 0.06) 0, rgba(160, 130, 90, 0.06) 1.5px, transparent 2px, transparent 15px),
+    repeating-radial-gradient(circle at 90% 80%, rgba(160, 130, 90, 0.06) 0, rgba(160, 130, 90, 0.06) 1.5px, transparent 2px, transparent 18px),
+    radial-gradient(ellipse at 50% 50%, rgba(255, 255, 255, 0.7) 0%, rgba(240, 230, 210, 0.4) 100%);
+  color: var(--color-ink-primary);
+  border: 3px double var(--color-paper-border);
+  border-radius: 6px;
+  box-shadow:
+    0 16px 40px rgba(0, 0, 0, 0.5),
+    0 3px 10px rgba(0, 0, 0, 0.35);
+  padding: 1.75rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Top Security Header Strip */
+.page-security-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1.5px solid var(--color-paper-line);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-ink-secondary);
+  letter-spacing: 0.08em;
+}
+
+.security-meta-left {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.doc-number {
+  color: var(--color-stamp-denied);
+  letter-spacing: 0.12em;
+}
+
+/* Page Title Banner */
+.page-title-banner {
+  text-align: center;
+  border-bottom: 1px solid var(--color-paper-line);
+  padding-bottom: 1rem;
+}
+
+.page-heading {
+  font-family: var(--font-serif);
+  font-size: clamp(1.4rem, 3.5vw, 1.9rem);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--color-ink-primary);
+  text-transform: uppercase;
+}
+
+.page-subheading {
+  font-size: 0.92rem;
+  color: var(--color-ink-secondary);
+  margin-top: 0.25rem;
+}
+
+/* --------------------------------------------------------------------------
+   Rubber Stamps: ENTRY DENIED & ENTRY GRANTED
+   -------------------------------------------------------------------------- */
+/* Denial Banner */
+.denial-container {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.25rem;
+  background-color: var(--color-stamp-denied-bg);
+  border: 1px solid #E0B4B1;
+  border-left: 5px solid var(--color-stamp-denied);
+  padding: 1.25rem;
+  border-radius: 4px;
+}
+
+.stamp-denied {
+  display: inline-flex;
+  padding: 0.4rem;
+  border: 3.5px double var(--color-stamp-denied);
+  color: var(--color-stamp-denied);
+  background: rgba(253, 232, 231, 0.95);
+  transform: rotate(-8deg);
+  opacity: 0.94;
+  box-shadow: inset 0 0 0 1px var(--color-stamp-denied);
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.stamp-denied-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--color-stamp-denied);
+  gap: 0.15rem;
+}
+
+.stamp-word {
+  font-family: var(--font-serif);
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.stamp-agency,
+.stamp-meta {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.denial-details {
+  flex: 1;
+  min-width: min(100%, 260px);
+}
+
+.denial-heading {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  color: var(--color-stamp-denied);
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.denial-message {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-ink-primary);
+  line-height: 1.4;
+}
+
+.denial-subtext {
+  font-size: 0.8rem;
+  color: var(--color-ink-muted);
+  margin-top: 0.3rem;
+  font-style: italic;
+}
+
+/* Granted Banner (Success) */
+.grant-stamp-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.5rem;
+  background-color: var(--color-stamp-granted-bg);
+  border: 1px solid #B7DFCA;
+  border-left: 5px solid var(--color-stamp-granted);
+  padding: 1.25rem;
+  border-radius: 4px;
+}
+
+.stamp-granted {
+  display: inline-flex;
+  padding: 0.4rem;
+  border: 3.5px double var(--color-stamp-granted);
+  color: var(--color-stamp-granted);
+  background: rgba(232, 245, 236, 0.95);
+  transform: rotate(4deg);
+  opacity: 0.95;
+  box-shadow: inset 0 0 0 1px var(--color-stamp-granted);
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.stamp-granted-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--color-stamp-granted);
+  gap: 0.15rem;
+}
+
+.stamp-date,
+.stamp-officer {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.grant-welcome {
+  flex: 1;
+  min-width: min(100%, 260px);
+}
+
+.grant-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  color: var(--color-stamp-granted);
+  font-weight: 700;
+}
+
+.grant-name {
+  font-family: var(--font-serif);
+  font-size: clamp(1.4rem, 3.2vw, 1.85rem);
+  font-weight: 700;
+  color: var(--color-ink-primary);
+  margin: 0.15rem 0;
+}
+
+.grant-desc {
+  font-size: 0.9rem;
+  color: var(--color-ink-secondary);
+}
+
+.grant-desc code {
+  font-family: var(--font-mono);
+  background: var(--color-paper-tint);
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  font-weight: 700;
+}
+
+/* Rubber Stamp Thump Animation (Motion Allowed Only) */
+@media (prefers-reduced-motion: no-preference) {
+  .stamp-denied {
+    animation: stampDeniedThump 0.32s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+  }
+
+  .stamp-granted {
+    animation: stampGrantedThump 0.35s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+  }
+
+  @keyframes stampDeniedThump {
+    0% {
+      transform: scale(2.2) rotate(-22deg);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(1) rotate(-8deg);
+      opacity: 0.94;
+    }
+  }
+
+  @keyframes stampGrantedThump {
+    0% {
+      transform: scale(2.4) rotate(18deg);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(1) rotate(4deg);
+      opacity: 0.95;
+    }
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Passport Form & Field Inputs
+   -------------------------------------------------------------------------- */
+.passport-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.passport-fields-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 1.25rem;
+}
+
+.passport-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.field-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-family: var(--font-body);
+  font-variant: small-caps;
+  text-transform: uppercase;
+  color: var(--color-ink-secondary);
+  cursor: pointer;
+}
+
+.label-primary {
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.label-sub {
+  font-size: 0.72rem;
+  color: var(--color-ink-muted);
+  font-variant: normal;
+  text-transform: none;
+}
+
+.field-input-box {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+}
+
+.input-data {
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-ink-primary);
+  background-color: #FCFBF7;
+  border: 1.5px solid var(--color-paper-border);
+  border-radius: 3px;
+  padding: 0.7rem 0.85rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.input-data::placeholder {
+  color: #8C7D6B;
+  font-weight: 400;
+  font-style: italic;
+}
+
+.input-data:focus {
+  border-color: var(--color-ink-primary);
+  background-color: #FFFFFF;
+}
+
+.input-data[aria-invalid="true"] {
+  border-color: var(--color-stamp-denied);
+  background-color: #FFF6F6;
+}
+
+/* Password reveal button */
+.password-box .input-data {
+  padding-right: 4.5rem;
+}
+
+.btn-reveal {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--color-paper-tint);
+  border: 1px solid var(--color-paper-border);
+  color: var(--color-ink-primary);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 0.35rem 0.65rem;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.btn-reveal:hover {
+  background: #DFD5BD;
+}
+
+/* Validation & Caps warning hints */
+.field-validation-msg {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--color-stamp-denied);
+  font-weight: 700;
+}
+
+.caps-warning-msg {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: #9C5800;
+  font-weight: 700;
+  background: #FEF3D6;
+  padding: 0.25rem 0.5rem;
+  border-radius: 3px;
+  border: 1px solid #E6BA67;
+}
+
+/* Action Button */
+.form-actions-bar {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 0.5rem;
+}
+
+.btn-stamp-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-paper-bg);
+  background-color: var(--color-ink-primary);
+  border: 2px solid #0F172A;
+  border-radius: 3px;
+  padding: 0.85rem 1.75rem;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.35);
+  text-decoration: none;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.btn-stamp-action:hover {
+  background-color: #2D3E63;
+}
+
+.btn-stamp-action:active {
+  transform: translateY(1px);
+}
+
+.btn-stamp-action.is-submitting {
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+/* --------------------------------------------------------------------------
+   Biometric Profile Page Grid (Success State)
+   -------------------------------------------------------------------------- */
+.passport-bio-grid {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+  padding: 1rem 0;
+  border-top: 1px solid var(--color-paper-line);
+  border-bottom: 1px solid var(--color-paper-line);
+}
+
+/* Official Photo Box */
+.bio-photo-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.photo-frame {
+  width: 120px;
+  height: 145px;
+  background: #EAE1CD;
+  border: 2px solid var(--color-paper-border);
+  border-radius: 3px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+.photo-initials {
+  font-family: var(--font-mono);
+  font-size: 2.8rem;
+  font-weight: 700;
+  color: var(--color-ink-primary);
+  letter-spacing: 0.05em;
+  z-index: 2;
+}
+
+.photo-watermark {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: rgba(140, 125, 107, 0.3);
+  letter-spacing: 0.25em;
+  pointer-events: none;
+  transform: rotate(-30deg);
+}
+
+.photo-caption {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--color-ink-secondary);
+  margin-top: 0.5rem;
+}
+
+.photo-subcaption {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--color-ink-muted);
+}
+
+/* Bio Data Fields List */
+.bio-data-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.bio-field-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+  gap: 1rem;
+}
+
+.bio-field-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.bio-label {
+  font-family: var(--font-body);
+  font-variant: small-caps;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--color-ink-muted);
+}
+
+.bio-value {
+  font-family: var(--font-mono);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-ink-primary);
+  border-bottom: 1px dotted var(--color-paper-line);
+  padding-bottom: 0.25rem;
+  overflow-wrap: anywhere;
+}
+
+.bio-code {
+  font-family: var(--font-mono);
+  background: var(--color-paper-tint);
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  font-size: 0.95rem;
+}
+
+.bio-email {
+  font-size: 0.95rem;
+}
+
+.role-badge {
+  display: inline-block;
+  background: var(--color-paper-tint);
+  border: 1px solid var(--color-paper-border);
+  color: var(--color-ink-primary);
+  padding: 0.15rem 0.55rem;
+  border-radius: 3px;
+  font-size: 0.82rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* --------------------------------------------------------------------------
+   Visa Stamps Section (Sign-in History & Admission Ledger)
+   -------------------------------------------------------------------------- */
+.visa-stamps-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin-top: 0.5rem;
+}
+
+.visa-stamps-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--color-paper-line);
+  padding-bottom: 0.4rem;
+}
+
+.visa-section-title {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--color-ink-primary);
+  text-transform: uppercase;
+}
+
+.visa-section-sub {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--color-ink-muted);
+  letter-spacing: 0.08em;
+}
+
+.visa-stamps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+  gap: 1rem;
+}
+
+.visa-stamp-box {
+  background: rgba(236, 227, 207, 0.6);
+  border: 2px dashed var(--color-paper-border);
+  border-radius: 4px;
+  padding: 0.5rem;
+  text-align: center;
+  transition: transform 0.15s ease;
+}
+
+.stamp-box-border {
+  border: 1px solid rgba(140, 125, 107, 0.4);
+  padding: 0.75rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  height: 100%;
+}
+
+.stamp-box-header {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  color: var(--color-ink-muted);
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.stamp-box-val {
+  font-family: var(--font-mono);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--color-ink-primary);
+  line-height: 1.2;
+}
+
+.val-prev,
+.val-date {
+  font-size: 0.88rem;
+  line-height: 1.3;
+}
+
+.stamp-box-label {
+  font-family: var(--font-body);
+  font-variant: small-caps;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-ink-secondary);
+  letter-spacing: 0.06em;
+  margin-top: 0.15rem;
+}
+
+.stamp-box-foot {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  color: var(--color-ink-muted);
+  text-transform: uppercase;
+}
+
+/* Exit Bar */
+.passport-exit-bar {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 0.5rem;
+}
+
+.btn-signout {
+  background-color: var(--color-ink-secondary);
+}
+
+.btn-signout:hover {
+  background-color: var(--color-ink-primary);
+}
+
+/* --------------------------------------------------------------------------
+   Authorized Border Registry Ledger (Test Accounts Table)
+   -------------------------------------------------------------------------- */
+.ledger-section {
+  background-color: rgba(236, 227, 207, 0.45);
+  border: 1px solid var(--color-paper-line);
+  border-radius: 4px;
+  padding: 1rem;
+  margin-top: 0.75rem;
+}
+
+.ledger-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.65rem;
+  border-bottom: 1px dotted var(--color-paper-line);
+  padding-bottom: 0.35rem;
+}
+
+.ledger-title {
+  font-family: var(--font-serif);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--color-ink-primary);
+  text-transform: uppercase;
+}
+
+.ledger-note {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--color-ink-muted);
+}
+
+.ledger-table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.ledger-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+  text-align: left;
+}
+
+.ledger-table th {
+  font-family: var(--font-body);
+  font-variant: small-caps;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  color: var(--color-ink-muted);
+  padding: 0.45rem 0.6rem;
+  border-bottom: 1.5px solid var(--color-paper-border);
+}
+
+.ledger-table td {
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid rgba(140, 125, 107, 0.25);
+  color: var(--color-ink-primary);
+}
+
+.code-val {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  background: var(--color-paper-tint);
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  font-size: 0.85rem;
+}
+
+.role-pill {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: #E2D7C0;
+  color: var(--color-ink-secondary);
+  padding: 0.15rem 0.45rem;
+  border-radius: 3px;
+}
+
+.ledger-footer-info {
+  font-size: 0.78rem;
+  color: var(--color-ink-muted);
+  margin-top: 0.6rem;
+  font-style: italic;
+}
+
+.ledger-footer-info code {
+  font-family: var(--font-mono);
+  font-style: normal;
+  font-weight: 700;
+}
+
+/* --------------------------------------------------------------------------
+   Machine Readable Zone (MRZ) Strip
+   -------------------------------------------------------------------------- */
+.mrz-strip {
+  background-color: var(--color-paper-tint);
+  border-top: 2px dashed var(--color-paper-border);
+  padding: 1rem 0.75rem;
+  border-radius: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.04);
+}
+
+.mrz-line {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: clamp(0.55rem, 2.5vw, 0.88rem);
+  letter-spacing: clamp(0.04em, 0.4vw, 0.12em);
+  color: var(--color-ink-primary);
+  line-height: 1.35;
+  text-transform: uppercase;
+  word-break: break-all;
+  overflow-wrap: anywhere;
+}
+
+/* --------------------------------------------------------------------------
+   Passport Footer
+   -------------------------------------------------------------------------- */
+.passport-footer {
+  text-align: center;
+  padding: 1rem 0.5rem 0;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--color-gold-muted);
+  letter-spacing: 0.08em;
+}
+
+.footer-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.security-notice {
+  font-weight: 700;
+}
+
+.copy-notice {
+  font-size: 0.68rem;
+}
+
+/* --------------------------------------------------------------------------
+   Responsive Adaptations (320px down to zero horizontal scroll)
+   -------------------------------------------------------------------------- */
+@media (max-width: 640px) {
+  body {
+    padding: 1rem 0.5rem 2rem;
+  }
+
+  .passport-page {
+    padding: 1.25rem 1rem;
+    gap: 1.15rem;
+  }
+
+  .passport-bio-grid {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .bio-photo-cell {
+    margin-bottom: 0.5rem;
+  }
+
+  .bio-field-row {
+    grid-template-columns: 1fr;
+  }
+
+  .visa-stamps-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .denial-container,
+  .grant-stamp-banner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .stamp-denied,
+  .stamp-granted {
+    align-self: center;
+  }
+
+  .form-actions-bar,
+  .passport-exit-bar {
+    width: 100%;
+  }
+
+  .btn-stamp-action {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Prefers Reduced Motion
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .stamp-denied,
+  .stamp-granted {
+    animation: none !important;
+  }
+}
